@@ -79,6 +79,18 @@ auth(_Host, Sock, Mod, ClientId, Timeout, Opts, HandshakeVsn) ->
 
 %%%_* Internal functions =======================================================
 
+do_auth(SendRecv, {oauthbearer, User, Pass}, Vsn) ->
+  Req = sasl_oauthbearer_token(User, Pass),
+  try
+    <<>> = SendRecv(Req),
+    ok
+  catch
+    error : ?REASON({closed, _Stack}) when Vsn =:= 0 ->
+      %% in version 0 (bare sasl bytes)
+      %% bad credentials result in a remote socket close
+      %% turn it into a more informative error code
+      ?ERROR(bad_credentials)
+  end;
 do_auth(SendRecv, {plain, User, Pass}, Vsn) ->
   Req = sasl_plain_token(User, Pass),
   try
@@ -132,9 +144,13 @@ handshake(Sock, Mod, Timeout, ClientId, Mechanism, Vsn) ->
 sasl_plain_token(User, Pass) ->
   iolist_to_binary([0, User, 0, Pass]).
 
+sasl_oauthbearer_token(User, Pass) ->
+  iolist_to_binary([0, User, 0, Pass]).
+
 mechanism(?plain) -> <<"PLAIN">>;
 mechanism(?scram_sha_256) -> <<"SCRAM-SHA-256">>;
 mechanism(?scram_sha_512) -> <<"SCRAM-SHA-512">>;
+mechanism(?oauthbearer) -> <<"OAUTHBEARER">>;
 mechanism({Tag, _User, _Pass}) -> mechanism(Tag).
 
 cs([]) -> "[]";

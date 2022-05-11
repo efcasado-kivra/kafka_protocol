@@ -85,6 +85,7 @@
 -define(plain, plain).
 -define(scram_sha_256, scram_sha_256).
 -define(scram_sha_512, scram_sha_512).
+-define(oauthbearer, oauthbearer).
 -define(IS_SCRAM(Mechanism), (Mechanism =:= ?scram_sha_256 orelse
                               Mechanism =:= ?scram_sha_512)).
 -define(IS_PLAIN_OR_SCRAM(Mechanism), (Mechanism =:= ?plain orelse
